@@ -1,1 +1,55 @@
-﻿
+﻿verifiedclaims
+@model List<MonthlyClaimSystem.Models.Claim>
+@{
+    ViewData["Title"] = "Verified Claims";
+}
+
+<div class="container mt-4">
+    <h2>Verified Claims for Approval</h2>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Claim ID</th>
+                <th>Lecturer</th>
+                <th>Hours</th>
+                <th>Rate</th>
+                <th>Total</th>
+                <th>Notes</th>
+                <th>Documents</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var claim in Model)
+            {
+                <tr>
+                    <td>@claim.ClaimId</td>
+                    <td>@claim.LecturerName</td>
+                    <td>@claim.HoursWorked</td>
+                    <td>@claim.HourlyRate</td>
+                    <td>@(claim.HoursWorked * claim.HourlyRate)</td>
+                    <td>@claim.Notes</td>
+                    <td>
+                        @foreach (var doc in claim.Documents)
+                        {
+                            <a href="@doc.FilePath" target="_blank">@doc.FileName</a>
+
+                            <br />
+                        }
+                    </td>
+                    <td>
+                        <form asp-action="ApproveClaim" method="post" style="display:inline;">
+                            <input type="hidden" name="id" value="@claim.ClaimId" />
+                            <button class="btn btn-primary btn-sm">Approve</button>
+                        </form>
+                        <form asp-action="RejectClaim" method="post" style="display:inline;">
+                            <input type="hidden" name="id" value="@claim.ClaimId" />
+                            <button class="btn btn-danger btn-sm">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

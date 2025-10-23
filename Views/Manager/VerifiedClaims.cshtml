@@ -1,4 +1,4 @@
-﻿verifiedclaims
+﻿
 @model List<MonthlyClaimSystem.Models.Claim>
 @{
     ViewData["Title"] = "Verified Claims";
@@ -52,4 +52,9 @@
             }
         </tbody>
     </table>
+
+    <div class="mt-3">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back to Home</a>
+    </div>
+
 </div>

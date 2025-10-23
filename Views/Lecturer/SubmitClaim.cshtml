@@ -1,4 +1,4 @@
-﻿submit claim
+﻿
 @model MonthlyClaimSystem.Models.Claim
 @{
     ViewData["Title"] = "Submit Claim";
@@ -35,4 +35,9 @@
         </div>
         <button type="submit" class="btn btn-primary">Submit Claim</button>
     </form>
+    
+    <div class="mt-3">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back to Home</a>
+    </div>
+
 </div>

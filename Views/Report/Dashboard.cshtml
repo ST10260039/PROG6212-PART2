@@ -1,0 +1,56 @@
+﻿@model dynamic
+@{
+    ViewData["Title"] = "HR – Claims Dashboard";
+}
+
+<h2 class="mb-4">HR – Claims Dashboard</h2>
+
+<div class="row text-center">
+    <div class="col-md-3 mb-3">
+        <div class="card border-primary">
+            <div class="card-body">
+                <h5 class="card-title">Pending</h5>
+                <p class="display-6 text-primary">@Model.PendingCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-info">
+            <div class="card-body">
+                <h5 class="card-title">Verified</h5>
+                <p class="display-6 text-info">@Model.VerifiedCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-success">
+            <div class="card-body">
+                <h5 class="card-title">Approved</h5>
+                <p class="display-6 text-success">@Model.ApprovedCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-danger">
+            <div class="card-body">
+                <h5 class="card-title">Rejected</h5>
+                <p class="display-6 text-danger">@Model.RejectedCount</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr />
+
+<h4 class="mt-4">Quick Links</h4>
+<div class="list-group">
+    <a asp-controller="Reports" asp-action="Claims" class="list-group-item list-group-item-action">
+        📑 View Detailed Claims Report
+    </a>
+    <a asp-controller="Reports" asp-action="Claims" asp-route-ExportFormat="Excel" class="list-group-item list-group-item-action">
+        📊 Download Excel Report
+    </a>
+    <a asp-controller="Reports" asp-action="Claims" asp-route-ExportFormat="PDF" class="list-group-item list-group-item-action">
+        📄 Download PDF Report
+    </a>
+</div>

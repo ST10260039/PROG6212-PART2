@@ -1,76 +1,51 @@
 ﻿@model List<MonthlyClaimSystem.Models.Claim>
 @{
+    Layout = "_Layout";
     ViewData["Title"] = "My Claims";
 }
 
-<div class="container mt-4">
-    <h2>My Submitted Claims</h2>
+<h3>My Submitted Claims</h3>
 
-    <table class="table table-bordered">
-        <thead>
+<table class="table table-bordered table-sm">
+    <thead>
+        <tr>
+            <th>Claim ID</th>
+            <th>Hours</th>
+            <th>Rate</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Submitted</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
             <tr>
-                <th>Claim ID</th>
-                <th>Hours Worked</th>
-                <th>Hourly Rate</th>
-                <th>Status</th>
+                <td>@claim.ClaimId</td>
+                <td>@claim.HoursWorked</td>
+                <td>@claim.HourlyRate</td>
+                <td>@claim.TotalPayment.ToString("C")</td>
+                <td>
+                    @* Show combined status using VerifyStatus + ApproveStatus *@
+                    @if (claim.VerifyStatus == "Pending")
+                    {
+                        <span class="badge bg-warning">Pending Verification</span>
+                    }
+                    else if (claim.VerifyStatus == "Verified" && claim.ApproveStatus == "Pending")
+                    {
+                        <span class="badge bg-info">Verified (Awaiting Approval)</span>
+                    }
+                    else if (claim.ApproveStatus == "Approved")
+                    {
+                        <span class="badge bg-success">Approved</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Rejected</span>
+                    }
+                </td>
+                <td>@claim.DateSubmitted.ToShortDateString()</td>
             </tr>
-        </thead>
-        <tbody>
-            @foreach (var claim in Model)
-            {
-                <tr>
-                    <td>@claim.ClaimId</td>
-                    <td>@claim.HoursWorked</td>
-                    <td>@claim.HourlyRate</td>
-                    <td>
-                        @if (claim.Status == "Pending")
-                        {
-                            <span class="badge bg-warning">Pending</span>
-                        }
-                        else if (claim.Status == "Verified")
-                        {
-                            <span class="badge bg-info">Verified</span>
-                        }
-                        else if (claim.Status == "Approved")
-                        {
-                            <span class="badge bg-success">Approved</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-danger">Rejected</span>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    @foreach (var claim in Model)
-    {
-        <div class="mb-4">
-            <label><strong>Claim @claim.ClaimId Progress</strong></label>
-            <div class="progress">
-                @if (claim.Status == "Pending")
-                {
-                    <div class="progress-bar bg-warning" style="width: 33%">Pending</div>
-                }
-                else if (claim.Status == "Verified")
-                {
-                    <div class="progress-bar bg-info" style="width: 66%">Verified</div>
-                }
-                else if (claim.Status == "Approved")
-                {
-                    <div class="progress-bar bg-success" style="width: 100%">Approved</div>
-                }
-                else
-                {
-                    <div class="progress-bar bg-danger" style="width: 100%">Rejected</div>
-                }
-            </div>
-        </div>
-    }
-
-    <div class="mt-3">
-        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back to Home</a>
-    </div>
-
-</div>
+        }
+    </tbody>
+</table>

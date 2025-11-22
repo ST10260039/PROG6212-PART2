@@ -1,93 +1,103 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MonthlyClaimSystem.Data;
 using MonthlyClaimSystem.Models;
-using MonthlyClaimSystem.Services;
-using AppDocument = MonthlyClaimSystem.Models.Document;
+using MonthlyClaimSystem.Models.MonthlyClaimSystem.Models;
 
 namespace MonthlyClaimSystem.Controllers
 {
+    [Authorize(Policy = "LecturerPolicy")]
     public class LecturerController : Controller
     {
-        public IActionResult SubmitClaim()
+        private readonly ApplicationDbContext _db;
+        private readonly IWebHostEnvironment _env;
+
+        public LecturerController(ApplicationDbContext db, IWebHostEnvironment env)
         {
-            return View();
+            _db = db;
+            _env = env;
         }
 
+        [HttpGet]
+        public IActionResult SubmitClaim() => View(new Claim());
+
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitClaim(Claim claim, List<IFormFile> files)
         {
-            claim.ClaimId = new Random().Next(1000, 9999);
-            claim.DateSubmitted = DateTime.Now;
-            claim.Status = "Pending";
-            claim.Documents = new List<AppDocument>();
-
-            // Ensure upload folder exists
-            var uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-            if (!Directory.Exists(uploadFolder))
+            var employee = await _db.Employees.FirstOrDefaultAsync(e => e.EmployeeID == claim.EmployeeID);
+            if (employee == null)
             {
-                Directory.CreateDirectory(uploadFolder);
+                ModelState.AddModelError("", "Select a valid lecturer (Employee).");
+                return View(claim);
             }
+
+            // Populate claim details
+            claim.LecturerName = employee.EmployeeName;
+            claim.HourlyRate = employee.ClaimRate;
+            claim.TotalPayment = claim.HoursWorked * claim.HourlyRate;
+
+            // Use string constants instead of enums
+            claim.VerifyStatus = ClaimVerifyStatus.Pending;
+            claim.ApproveStatus = ClaimApproveStatus.Pending;
+            claim.DateSubmitted = DateTime.UtcNow;
+
+            _db.Claims.Add(claim);
+            await _db.SaveChangesAsync();
+
+            //Handle file uploads
+            var uploadFolder = Path.Combine(_env.WebRootPath, "uploads");
+            Directory.CreateDirectory(uploadFolder);
 
             foreach (var file in files)
             {
-                if (file.Length > 0 && IsValidFileType(file.FileName))
+                if (file.Length > 0)
                 {
-                    if (file.Length > 5 * 1024 * 1024) // 5MB limit
+                    var ext = Path.GetExtension(file.FileName).ToLower();
+                    var allowed = new[] { ".pdf", ".docx", ".xlsx", ".jpg", ".png" };
+                    if (!allowed.Contains(ext) || file.Length > 5 * 1024 * 1024) continue;
+
+                    var uniqueName = $"{claim.ClaimId}_{Path.GetFileName(file.FileName)}";
+                    var filePath = Path.Combine(uploadFolder, uniqueName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
                     {
-                        ModelState.AddModelError("", $"File '{file.FileName}' is too large. Max size is 5MB.");
-                        return View();
+                        await file.CopyToAsync(stream);
                     }
 
-                    // Save file to disk
-                    var filePath = Path.Combine(uploadFolder, file.FileName);
-                    using var stream = new FileStream(filePath, FileMode.Create);
-                    await file.CopyToAsync(stream);
+                    using var ms = new MemoryStream();
+                    await file.CopyToAsync(ms);
+                    var data = ms.ToArray();
 
-                    //  Encrypt file content
-                    var encrypted = await EncryptFileAsync(file);
+                    // Simple XOR "encryption"
+                    for (int i = 0; i < data.Length; i++) data[i] ^= 0x5A;
 
-                    // Attach encrypted document to claim
-                    claim.Documents.Add(new AppDocument
+                    _db.Documents.Add(new Document
                     {
+                        ClaimId = claim.ClaimId,
                         FileName = file.FileName,
-                        FilePath = filePath,
-                        FileType = Path.GetExtension(file.FileName),
-                        EncryptedData = encrypted
+                        FileType = ext,
+                        FileSize = file.Length,
+                        UploadedOn = DateTime.UtcNow,
+                        EncryptedData = data
                     });
                 }
             }
 
-            ClaimService.SaveClaim(claim);
-            TempData["Message"] = $"Claim submitted successfully! Your Claim ID is {claim.ClaimId}";
-            return RedirectToAction("SubmitClaim");
+            await _db.SaveChangesAsync();
+            TempData["Message"] = $"Claim submitted successfully! Claim ID: {claim.ClaimId}";
+            return RedirectToAction("MyClaims", new { lecturerName = employee.EmployeeName });
         }
 
-        private bool IsValidFileType(string fileName)
+        [HttpGet]
+        public async Task<IActionResult> MyClaims(string lecturerName)
         {
-            var allowedExtensions = new[] { ".pdf", ".docx", ".xlsx" };
-            return allowedExtensions.Contains(Path.GetExtension(fileName).ToLower());
-        }
-
-        //  Simple XOR encryption for uploaded file content
-        private async Task<byte[]> EncryptFileAsync(IFormFile file)
-        {
-            using var ms = new MemoryStream();
-            await file.CopyToAsync(ms);
-            byte[] data = ms.ToArray();
-            for (int i = 0; i < data.Length; i++)
-                data[i] ^= 0x5A; // XOR with 0x5A for basic obfuscation
-            return data;
-        }
-
-        public IActionResult MyClaims(string lecturerName)
-        {
-            var claims = ClaimService.GetAll()
-                .Where(c => c.LecturerName.Equals(lecturerName, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            var claims = await _db.Claims
+                .Include(c => c.Documents)
+                .Where(c => c.LecturerName == lecturerName)
+                .OrderByDescending(c => c.DateSubmitted)
+                .ToListAsync();
 
             return View(claims);
         }

@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using MonthlyClaimSystem.Models;
-using System.Threading.Tasks;
 
 namespace MonthlyClaimSystem.Controllers
 {
@@ -16,7 +16,11 @@ namespace MonthlyClaimSystem.Controllers
             _userManager = userManager;
         }
 
+        [HttpGet]
+        public IActionResult Login() => View();
+
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string email, string password, string role)
         {
             var user = await _userManager.FindByEmailAsync(email);
@@ -25,29 +29,52 @@ namespace MonthlyClaimSystem.Controllers
                 var result = await _signInManager.PasswordSignInAsync(user, password, false, false);
                 if (result.Succeeded)
                 {
-                    // Redirect based on role
-                    if (await _userManager.IsInRoleAsync(user, "Lecturer"))
-                        return RedirectToAction("SubmitClaim", "Lecturer");
-
-                    if (await _userManager.IsInRoleAsync(user, "Coordinator"))
-                        return RedirectToAction("PendingClaims", "Coordinator");
-
-                    if (await _userManager.IsInRoleAsync(user, "Manager"))
-                        return RedirectToAction("VerifiedClaims", "Manager");
-
-                    if (await _userManager.IsInRoleAsync(user, "HR"))
-                        return RedirectToAction("ManageLecturers", "HR");
+                    if (!string.IsNullOrWhiteSpace(role) && await _userManager.IsInRoleAsync(user, role))
+                    {
+                        return role switch
+                        {
+                            "Lecturer" => RedirectToAction("SubmitClaim", "Lecturer"),
+                            "Coordinator" => RedirectToAction("PendingClaims", "Coordinator"),
+                            "Manager" => RedirectToAction("VerifiedClaims", "Manager"),
+                            "HR" => RedirectToAction("ManageLecturers", "HR"),
+                            _ => RedirectToAction("Login")
+                        };
+                    }
+                    TempData["Error"] = "User is not assigned to the selected role.";
+                    return RedirectToAction("Login");
                 }
             }
-
             TempData["Error"] = "Invalid login attempt.";
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Login");
         }
 
-        [HttpGet]
-        public IActionResult Register()
+        [HttpPost]
+        public async Task<IActionResult> Logout()
         {
-            return View();
+            await _signInManager.SignOutAsync();
+            return RedirectToAction("Login");
         }
+        //[HttpPost]
+        //[Authorize(Roles = "HR")] // only HR can reset passwords
+        //public async Task<IActionResult> ResetLecturerPassword()
+        //{
+        //    var user = await _userManager.FindByEmailAsync("lecturer@cms.com");
+        //    if (user == null)
+        //    {
+        //        return NotFound("User not found.");
+        //    }
+
+        //    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        //    var result = await _userManager.ResetPasswordAsync(user, token, "NewPassword123!");
+
+        //    if (result.Succeeded)
+        //    {
+        //        return Ok("Password reset successfully.");
+        //    }
+        //    else
+        //    {
+        //        return BadRequest(result.Errors);
+        //    }
+        //}
     }
 }

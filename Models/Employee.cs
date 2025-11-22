@@ -1,11 +1,16 @@
-﻿namespace MonthlyClaimSystem.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MonthlyClaimSystem.Models
 {
     public class Employee
     {
         public int EmployeeID { get; set; }
-        public string EmployeeName { get; set; }
-        public string Department { get; set; }
-        public string ContactInfo { get; set; }
-        public decimal ClaimRate { get; set; } // HR sets this
+
+        [Required] public string EmployeeName { get; set; } = string.Empty;
+        [Required] public string Department { get; set; } = string.Empty;
+        [Required] public string ContactInfo { get; set; } = string.Empty;
+
+        [Range(0, double.MaxValue)]
+        public decimal ClaimRate { get; set; }
     }
 }

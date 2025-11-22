@@ -1,46 +1,177 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using MonthlyClaimSystem.Data;
 using MonthlyClaimSystem.Models;
+using MonthlyClaimSystem.Models.MonthlyClaimSystem.Models;
 
 namespace MonthlyClaimSystem.Services
 {
-    public static class ClaimService
+    public class ClaimService : IClaimService
     {
-        private static List<Claim> _claims = new();
+        private readonly ApplicationDbContext _db;
 
-        public static List<Claim> GetAll() => _claims;
-
-        public static Claim? GetById(int id) => _claims.FirstOrDefault(c => c.ClaimId == id);
-
-        public static void SaveClaim(Claim claim)
+        public ClaimService(ApplicationDbContext db)
         {
-            if (claim.ClaimId == 0)
-                claim.ClaimId = _claims.Count > 0 ? _claims.Max(c => c.ClaimId) + 1 : 1;
-
-            claim.TotalPayment = claim.HoursWorked * claim.HourlyRate;
-            _claims.Add(claim);
+            _db = db;
         }
 
-        public static void Update(Claim updated)
+        public async Task<List<Claim>> GetAllAsync()
         {
-            var index = _claims.FindIndex(c => c.ClaimId == updated.ClaimId);
-            if (index >= 0)
+            return await _db.Claims.Include(c => c.Employee)
+                                   .Include(c => c.Documents)
+                                   .OrderByDescending(c => c.ClaimDate)
+                                   .ToListAsync();
+        }
+
+        public async Task<Claim?> GetByIdAsync(int id)
+        {
+            return await _db.Claims.Include(c => c.Employee)
+                                   .Include(c => c.Documents)
+                                   .FirstOrDefaultAsync(c => c.ClaimId == id);
+        }
+
+        public async Task SaveClaimAsync(Claim claim)
+        {
+            claim.TotalPayment = claim.HoursWorked * claim.HourlyRate;
+            claim.DateSubmitted = DateTime.UtcNow;
+
+            _db.Claims.Add(claim);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(Claim updated)
+        {
+            var existing = await _db.Claims.FindAsync(updated.ClaimId);
+            if (existing != null)
             {
-                updated.TotalPayment = updated.HoursWorked * updated.HourlyRate;
-                _claims[index] = updated;
+                existing.LecturerName = updated.LecturerName;
+                existing.EmployeeID = updated.EmployeeID;
+                existing.HoursWorked = updated.HoursWorked;
+                existing.HourlyRate = updated.HourlyRate;
+                existing.TotalPayment = updated.HoursWorked * updated.HourlyRate;
+                existing.Notes = updated.Notes;
+                existing.VerifyStatus = updated.VerifyStatus;
+                existing.ApproveStatus = updated.ApproveStatus;
+                existing.ApprovedByUserId = updated.ApprovedByUserId;
+                existing.VerifiedByUserId = updated.VerifiedByUserId;
+
+                await _db.SaveChangesAsync();
             }
         }
 
-        public static void Delete(int id)
+        public async Task DeleteAsync(int id)
         {
-            var claim = GetById(id);
+            var claim = await _db.Claims.FindAsync(id);
             if (claim != null)
-                _claims.Remove(claim);
+            {
+                _db.Claims.Remove(claim);
+                await _db.SaveChangesAsync();
+            }
         }
 
-        public static bool IsClaimValid(Claim claim)
+        public bool IsClaimValid(Claim claim)
         {
-            return claim.HoursWorked > 0 && claim.HourlyRate >= 100 && claim.HourlyRate <= 500;
+            return claim.HoursWorked > 0 &&
+                   claim.HourlyRate >= 100 &&
+                   claim.HourlyRate <= 500;
+        }
+
+        //Workflow helpers
+        public async Task VerifyAsync(int id, string verifierUserId)
+        {
+            var claim = await _db.Claims.FindAsync(id);
+            if (claim != null)
+            {
+                claim.VerifyStatus = ClaimVerifyStatus.Verified;
+                claim.VerifiedByUserId = verifierUserId;
+                claim.VerifiedOn = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+            }
+        }
+
+        public async Task RejectAsync(int id, string verifierUserId, string reason)
+        {
+            var claim = await _db.Claims.FindAsync(id);
+            if (claim != null)
+            {
+                claim.VerifyStatus = ClaimVerifyStatus.Rejected;
+                claim.VerifiedByUserId = verifierUserId;
+                claim.VerifiedOn = DateTime.UtcNow;
+                claim.Notes = string.IsNullOrWhiteSpace(claim.Notes)
+                    ? $"Coordinator rejected: {reason}"
+                    : $"{claim.Notes}\nCoordinator rejected: {reason}";
+                await _db.SaveChangesAsync();
+            }
+        }
+
+        public async Task ApproveAsync(int id, string approverUserId)
+        {
+            var claim = await _db.Claims.FindAsync(id);
+            if (claim != null && claim.VerifyStatus == ClaimVerifyStatus.Verified)
+            {
+                claim.ApproveStatus = ClaimApproveStatus.Approved;
+                claim.ApprovedByUserId = approverUserId;
+                claim.ApprovedOn = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+            }
+        }
+
+        public async Task ManagerRejectAsync(int id, string approverUserId, string reason)
+        {
+            var claim = await _db.Claims.FindAsync(id);
+            if (claim != null)
+            {
+                claim.ApproveStatus = ClaimApproveStatus.Rejected;
+                claim.ApprovedByUserId = approverUserId;
+                claim.ApprovedOn = DateTime.UtcNow;
+                claim.Notes = string.IsNullOrWhiteSpace(claim.Notes)
+                    ? $"Manager rejected: {reason}"
+                    : $"{claim.Notes}\nManager rejected: {reason}";
+                await _db.SaveChangesAsync();
+            }
+        }
+
+        //Interface methods
+        public async Task<List<Claim>> GetPendingForCoordinatorAsync()
+        {
+            return await _db.Claims
+                .Include(c => c.Employee)
+                .Where(c => c.VerifyStatus == ClaimVerifyStatus.Pending)
+                .OrderBy(c => c.DateSubmitted)
+                .ToListAsync();
+        }
+
+        public async Task<List<Claim>> GetVerifiedForManagerAsync()
+        {
+            return await _db.Claims
+                .Include(c => c.Employee)
+                .Where(c => c.VerifyStatus == ClaimVerifyStatus.Verified &&
+                            c.ApproveStatus == ClaimApproveStatus.Pending)
+                .OrderBy(c => c.VerifiedOn)
+                .ToListAsync();
+        }
+
+        public async Task<List<Claim>> GetApprovedByManagerAsync(string managerUserId)
+        {
+            return await _db.Claims
+                .Include(c => c.Employee)
+                .Where(c => c.ApproveStatus == ClaimApproveStatus.Approved &&
+                            c.ApprovedByUserId == managerUserId)
+                .OrderByDescending(c => c.ApprovedOn)
+                .ToListAsync();
+        }
+
+        public async Task<List<Claim>> GetVerifiedByCoordinatorAsync(string coordinatorUserId)
+        {
+            return await _db.Claims
+                .Include(c => c.Employee)
+                .Where(c => c.VerifyStatus == ClaimVerifyStatus.Verified &&
+                            c.VerifiedByUserId == coordinatorUserId)
+                .OrderByDescending(c => c.VerifiedOn)
+                .ToListAsync();
         }
     }
 }

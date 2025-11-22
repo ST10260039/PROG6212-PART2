@@ -1,32 +1,40 @@
 ﻿@model MonthlyClaimSystem.Models.Employee
 @{
+    Layout = "_Layout";
     ViewData["Title"] = "Edit Lecturer";
 }
 
-<div class="container mt-4">
-    <h2>Edit Lecturer</h2>
-
-    <form asp-action="EditLecturer" method="post">
-        <input type="hidden" asp-for="EmployeeID" />
-
-        <div class="mb-3">
-            <label asp-for="EmployeeName" class="form-label">Name</label>
-            <input asp-for="EmployeeName" class="form-control" />
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title">Edit Lecturer</h3>
+                <form asp-action="EditLecturer" method="post">
+                    <input type="hidden" asp-for="EmployeeID" />
+                    <div class="mb-3">
+                        <label asp-for="EmployeeName" class="form-label"></label>
+                        <input asp-for="EmployeeName" class="form-control" />
+                        <span asp-validation-for="EmployeeName" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Department" class="form-label"></label>
+                        <input asp-for="Department" class="form-control" />
+                        <span asp-validation-for="Department" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ContactInfo" class="form-label"></label>
+                        <input asp-for="ContactInfo" class="form-control" />
+                        <span asp-validation-for="ContactInfo" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ClaimRate" class="form-label"></label>
+                        <input asp-for="ClaimRate" class="form-control" />
+                        <span asp-validation-for="ClaimRate" class="text-danger"></span>
+                    </div>
+                    <button class="btn btn-primary">Update</button>
+                    <a asp-action="ManageLecturers" class="btn btn-secondary ms-2">Cancel</a>
+                </form>
+            </div>
         </div>
-        <div class="mb-3">
-            <label asp-for="Department" class="form-label">Department</label>
-            <input asp-for="Department" class="form-control" />
-        </div>
-        <div class="mb-3">
-            <label asp-for="ContactInfo" class="form-label">Contact Info</label>
-            <input asp-for="ContactInfo" class="form-control" />
-        </div>
-        <div class="mb-3">
-            <label asp-for="ClaimRate" class="form-label">Claim Rate</label>
-            <input asp-for="ClaimRate" class="form-control" />
-        </div>
-
-        <button type="submit" class="btn btn-primary">Update</button>
-        <a asp-action="ManageLecturers" class="btn btn-secondary ms-2">Cancel</a>
-    </form>
+    </div>
 </div>

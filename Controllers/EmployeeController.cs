@@ -12,6 +12,6 @@ namespace MonthlyClaimSystem.Controllers
             return View(employees);
         }
 
-        // … rest of your controller actions …
+        
     }
 }

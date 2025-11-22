@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MonthlyClaimSystem.Data;
 using MonthlyClaimSystem.Models;
+using MonthlyClaimSystem.Services;
 
 namespace MonthlyClaimSystem
 {
@@ -11,39 +12,48 @@ namespace MonthlyClaimSystem
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // ? Step 4: Configure EF Core with SQL Server
+            // Configure EF Core with SQL Server
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // ? Step 4: Configure Identity
+            // Configure Identity with relaxed password rules
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
                 options.Password.RequiredLength = 6;
+                options.Password.RequireDigit = false;
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
+                options.Password.RequireLowercase = false;
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
-            // ? Other services
+            // Add MVC and session support
             builder.Services.AddControllersWithViews();
             builder.Services.AddSession();
-            builder.Services.AddAuthentication();
+
+            // Register ClaimService
+            builder.Services.AddScoped<IClaimService, ClaimService>();
+
+            // Role-based authorization policies
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("HRPolicy", policy => policy.RequireRole("HR"));
+                options.AddPolicy("LecturerPolicy", policy => policy.RequireRole("Lecturer"));
+                options.AddPolicy("CoordinatorPolicy", policy => policy.RequireRole("Coordinator"));
+                options.AddPolicy("ManagerPolicy", policy => policy.RequireRole("Manager"));
             });
 
             var app = builder.Build();
 
-            // ? Step 6: Seed roles and HR user
+            // Seed roles and users
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
-                await DataSeeder.SeedRolesAndHRUser(services);
+                await DataSeeder.SeedRolesAndUsers(services);
             }
 
-            // ? Middleware pipeline
+            // Middleware pipeline
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
@@ -51,15 +61,17 @@ namespace MonthlyClaimSystem
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
-            app.UseSession();
 
+            app.UseSession();        // Session before auth
+            app.UseAuthentication(); // Identity
+            app.UseAuthorization();
+
+            // Default route to login
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
-                .WithStaticAssets();
+                pattern: "{controller=Account}/{action=Login}/{id?}");
 
             app.Run();
         }

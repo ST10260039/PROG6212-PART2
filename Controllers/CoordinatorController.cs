@@ -13,18 +13,18 @@ namespace MonthlyClaimSystem.Controllers
             return View(claims);
         }
 
-        [HttpPost]
-        public IActionResult VerifyClaim(int id)
-        {
-            var claim = ClaimService.GetById(id);
-            if (claim != null)
-            {
-                claim.Status = "Verified";
-                claim.IsVerified = true;
-                ClaimService.Update(claim);
-            }
-            return RedirectToAction("PendingClaims");
-        }
+        //[HttpPost]
+        //public IActionResult VerifyClaim(int id)
+        //{
+        //    var claim = ClaimService.GetById(id);
+        //    if (claim != null)
+        //    {
+        //        claim.Status = "Verified";
+        //        claim.IsVerified = true;
+        //        ClaimService.Update(claim);
+        //    }
+        //    return RedirectToAction("PendingClaims");
+        //}
 
         [HttpPost]
         public IActionResult RejectClaim(int id)
@@ -35,6 +35,21 @@ namespace MonthlyClaimSystem.Controllers
                 claim.Status = "Rejected";
                 ClaimService.Update(claim);
             }
+            return RedirectToAction("PendingClaims");
+        }
+        [HttpPost]
+        public IActionResult VerifyClaim(int id)
+        {
+            var claim = ClaimService.GetById(id);
+            if (ClaimService.IsClaimValid(claim))
+            {
+                claim.VerifyStatus = "Verified";
+            }
+            else
+            {
+                claim.VerifyStatus = "Rejected";
+            }
+            ClaimService.Update(claim);
             return RedirectToAction("PendingClaims");
         }
     }

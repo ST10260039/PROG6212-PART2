@@ -1,0 +1,74 @@
+﻿@model List<MonthlyClaimSystem.Models.Claim>
+@{
+    ViewData["Title"] = "Filtered Claims Report";
+}
+
+<div class="container mt-4">
+    <h2>Claims Report</h2>
+
+    <!-- Filter Form -->
+    <form asp-action="FilteredReport" method="get" class="row g-3 mb-4">
+        <div class="col-md-2">
+            <label>Status</label>
+            <select name="status" class="form-select">
+                <option value="">All</option>
+                <option>Pending</option>
+                <option>Verified</option>
+                <option>Approved</option>
+                <option>Rejected</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label>Lecturer</label>
+            <input type="text" name="lecturer" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label>Min Amount</label>
+            <input type="number" step="0.01" name="minAmount" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label>Max Amount</label>
+            <input type="number" step="0.01" name="maxAmount" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label>From Date</label>
+            <input type="date" name="fromDate" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label>To Date</label>
+            <input type="date" name="toDate" class="form-control" />
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+
+    <!-- Results Table -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Claim ID</th>
+                <th>Lecturer</th>
+                <th>Hours</th>
+                <th>Rate</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Date Submitted</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var claim in Model)
+            {
+                <tr>
+                    <td>@claim.ClaimId</td>
+                    <td>@claim.LecturerName</td>
+                    <td>@claim.HoursWorked</td>
+                    <td>@claim.HourlyRate</td>
+                    <td>@claim.TotalPayment.ToString("C")</td>
+                    <td>@claim.Status</td>
+                    <td>@claim.DateSubmitted.ToShortDateString()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

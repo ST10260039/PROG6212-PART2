@@ -1,0 +1,43 @@
+﻿@model List<MonthlyClaimSystem.Models.Employee>
+@{
+    ViewData["Title"] = "Manage Lecturers";
+}
+
+<div class="container mt-4">
+    <h2>Lecturer Management</h2>
+
+    <a asp-action="CreateLecturer" class="btn btn-success mb-3">Add New Lecturer</a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Contact</th>
+                <th>Claim Rate</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var lecturer in Model)
+            {
+                <tr>
+                    <td>@lecturer.EmployeeID</td>
+                    <td>@lecturer.EmployeeName</td>
+                    <td>@lecturer.Department</td>
+                    <td>@lecturer.ContactInfo</td>
+                    <td>@lecturer.ClaimRate</td>
+                    <td>
+                        <a asp-action="EditLecturer" asp-route-id="@lecturer.EmployeeID" class="btn btn-primary btn-sm">Edit</a>
+                        <form asp-action="SetClaimRate" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@lecturer.EmployeeID" />
+                            <input type="number" step="0.01" name="rate" placeholder="Set Rate" class="form-control d-inline w-50" />
+                            <button type="submit" class="btn btn-warning btn-sm">Set Rate</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

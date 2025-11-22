@@ -1,0 +1,38 @@
+﻿@model List<MonthlyClaimSystem.Models.Employee>
+@{
+    ViewData["Title"] = "Employee Directory";
+}
+
+<div class="container mt-4">
+    <h2>Employee Directory</h2>
+
+    <a asp-action="Create" class="btn btn-success mb-3">Add New Employee</a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Contact</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var emp in Model)
+            {
+                <tr>
+                    <td>@emp.EmployeeID</td>
+                    <td>@emp.EmployeeName</td>
+                    <td>@emp.Department</td>
+                    <td>@emp.ContactInfo</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@emp.EmployeeID" class="btn btn-info btn-sm">Details</a>
+                        <a asp-action="Edit" asp-route-id="@emp.EmployeeID" class="btn btn-primary btn-sm">Edit</a>
+                        <a asp-action="Delete" asp-route-id="@emp.EmployeeID" class="btn btn-danger btn-sm">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

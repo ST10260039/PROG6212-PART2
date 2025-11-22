@@ -1,30 +1,61 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using MonthlyClaimSystem.Data;
+using MonthlyClaimSystem.Models;
+
 namespace MonthlyClaimSystem
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // ? Step 4: Configure EF Core with SQL Server
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // ? Step 4: Configure Identity
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                options.Password.RequiredLength = 6;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;
+            })
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
+
+            // ? Other services
             builder.Services.AddControllersWithViews();
+            builder.Services.AddSession();
+            builder.Services.AddAuthentication();
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("HRPolicy", policy => policy.RequireRole("HR"));
+            });
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // ? Step 6: Seed roles and HR user
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                await DataSeeder.SeedRolesAndHRUser(services);
+            }
+
+            // ? Middleware pipeline
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
+            app.UseSession();
 
-            app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}")

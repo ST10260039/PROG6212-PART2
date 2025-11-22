@@ -13,17 +13,17 @@ namespace MonthlyClaimSystem.Controllers
             return View(claims);
         }
 
-        [HttpPost]
-        public IActionResult ApproveClaim(int id)
-        {
-            var claim = ClaimService.GetById(id);
-            if (claim != null)
-            {
-                claim.Status = "Approved";
-                ClaimService.Update(claim);
-            }
-            return RedirectToAction("VerifiedClaims");
-        }
+        //[HttpPost]
+        //public IActionResult ApproveClaim(int id)
+        //{
+        //    var claim = ClaimService.GetById(id);
+        //    if (claim != null)
+        //    {
+        //        claim.Status = "Approved";
+        //        ClaimService.Update(claim);
+        //    }
+        //    return RedirectToAction("VerifiedClaims");
+        //}
 
         [HttpPost]
         public IActionResult RejectClaim(int id)
@@ -34,6 +34,22 @@ namespace MonthlyClaimSystem.Controllers
                 claim.Status = "Rejected";
                 ClaimService.Update(claim);
             }
+            return RedirectToAction("VerifiedClaims");
+        }
+
+        [HttpPost]
+        public IActionResult ApproveClaim(int id)
+        {
+            var claim = ClaimService.GetById(id);
+            if (claim.VerifyStatus == "Verified")
+            {
+                claim.ApproveStatus = "Approved";
+            }
+            else
+            {
+                claim.ApproveStatus = "Rejected";
+            }
+            ClaimService.Update(claim);
             return RedirectToAction("VerifiedClaims");
         }
     }

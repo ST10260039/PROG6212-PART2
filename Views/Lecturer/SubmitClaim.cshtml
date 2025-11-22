@@ -1,5 +1,4 @@
-﻿
-@model MonthlyClaimSystem.Models.Claim
+﻿@model MonthlyClaimSystem.Models.Claim
 @{
     ViewData["Title"] = "Submit Claim";
 }
@@ -17,27 +16,50 @@
             <label asp-for="LecturerName" class="form-label">Lecturer Name</label>
             <input asp-for="LecturerName" class="form-control" />
         </div>
+
         <div class="mb-3">
             <label asp-for="HoursWorked" class="form-label">Hours Worked</label>
-            <input asp-for="HoursWorked" class="form-control" />
+            <input asp-for="HoursWorked" class="form-control" id="hours" type="number" min="0" required />
         </div>
+
         <div class="mb-3">
             <label asp-for="HourlyRate" class="form-label">Hourly Rate</label>
-            <input asp-for="HourlyRate" class="form-control" />
+            <input asp-for="HourlyRate" class="form-control" id="rate" type="number" min="0" required />
         </div>
+
+        <!--Auto-calculated Total -->
+        <div class="mb-3">
+            <label class="form-label">Total Payment</label>
+            <input type="text" id="total" class="form-control" readonly />
+        </div>
+
         <div class="mb-3">
             <label asp-for="Notes" class="form-label">Additional Notes</label>
             <textarea asp-for="Notes" class="form-control"></textarea>
         </div>
+
         <div class="mb-3">
             <label class="form-label">Upload Supporting Documents</label>
-            <input type="file" name="files" multiple class="form-control" />
+            <input type="file" name="files" multiple class="form-control" accept=".pdf,.docx,.jpg,.png" />
         </div>
+
         <button type="submit" class="btn btn-primary">Submit Claim</button>
     </form>
-    
+
     <div class="mt-3">
         <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Back to Home</a>
     </div>
-
 </div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function calculateTotal() {
+            let hours = parseFloat($('#hours').val()) || 0;
+            let rate = parseFloat($('#rate').val()) || 0;
+            $('#total').val((hours * rate).toFixed(2));
+        }
+
+        $('#hours, #rate').on('input', calculateTotal);
+    </script>
+}

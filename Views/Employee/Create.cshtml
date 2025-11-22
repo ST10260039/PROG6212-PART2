@@ -1,0 +1,26 @@
+﻿@model MonthlyClaimSystem.Models.Employee
+@{
+    ViewData["Title"] = "Add Employee";
+}
+
+<div class="container mt-4">
+    <h2>Add New Employee</h2>
+
+    <form asp-action="Create" method="post">
+        <div class="mb-3">
+            <label asp-for="EmployeeName" class="form-label">Name</label>
+            <input asp-for="EmployeeName" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Department" class="form-label">Department</label>
+            <input asp-for="Department" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="ContactInfo" class="form-label">Contact Info</label>
+            <input asp-for="ContactInfo" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-success">Create</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>

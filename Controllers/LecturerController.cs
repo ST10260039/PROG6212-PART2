@@ -42,12 +42,15 @@ namespace MonthlyClaimSystem.Controllers
                         return View();
                     }
 
+                    // Save file to disk
                     var filePath = Path.Combine(uploadFolder, file.FileName);
                     using var stream = new FileStream(filePath, FileMode.Create);
                     await file.CopyToAsync(stream);
 
+                    //  Encrypt file content
                     var encrypted = await EncryptFileAsync(file);
 
+                    // Attach encrypted document to claim
                     claim.Documents.Add(new AppDocument
                     {
                         FileName = file.FileName,
@@ -69,12 +72,14 @@ namespace MonthlyClaimSystem.Controllers
             return allowedExtensions.Contains(Path.GetExtension(fileName).ToLower());
         }
 
+        //  Simple XOR encryption for uploaded file content
         private async Task<byte[]> EncryptFileAsync(IFormFile file)
         {
             using var ms = new MemoryStream();
             await file.CopyToAsync(ms);
             byte[] data = ms.ToArray();
-            for (int i = 0; i < data.Length; i++) data[i] ^= 0x5A; // Simple XOR encryption
+            for (int i = 0; i < data.Length; i++)
+                data[i] ^= 0x5A; // XOR with 0x5A for basic obfuscation
             return data;
         }
 

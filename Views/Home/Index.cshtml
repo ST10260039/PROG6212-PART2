@@ -1,43 +1,43 @@
 ﻿@{
-    ViewData["Title"] = "Contract Monthly Claim System";
+    ViewData["Title"] = "Login";
 }
 
 <div class="container mt-5">
-    <h2 class="text-center mb-4">Welcome to the Contract Monthly Claim System</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
 
-    <div class="row text-center">
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Submit a Claim</h5>
-                    
-                    <a href="/Lecturer/SubmitClaim" class="btn btn-primary">Go to Claim Submission</a>
+            <h2 class="text-center mb-4">Monthly Claim System Login</h2>
+
+            <!-- Login Form -->
+            <form asp-action="Login" asp-controller="Account" method="post">
+                <div class="mb-3">
+                    <label for="Email" class="form-label">Email</label>
+                    <input type="email" name="Email" class="form-control" required />
                 </div>
-            </div>
-        </div>
 
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Verify Claims(Programme Coordinators)</h5>
-                    <a href="/Coordinator/PendingClaims" class="btn btn-success">Go to Verification</a>
+                <div class="mb-3">
+                    <label for="Password" class="form-label">Password</label>
+                    <input type="password" name="Password" class="form-control" required />
                 </div>
-            </div>
-        </div>
 
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Approve Claims(Academic Managers)</h5>
-
-                    <a href="/Manager/VerifiedClaims" class="btn btn-info">Go to Approval</a>
+                <div class="mb-3">
+                    <label for="Role" class="form-label">Select Role</label>
+                    <select name="Role" class="form-select" required>
+                        <option value="">-- Select Role --</option>
+                        <option value="Lecturer">Lecturer (Submit Claim)</option>
+                        <option value="Coordinator">Coordinator (Verify Claim)</option>
+                        <option value="Manager">Manager (Approve Claim)</option>
+                        <option value="HR">HR (Manage Users & Lecturers)</option>
+                    </select>
                 </div>
+
+                <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+
+            <!-- Optional: Registration link for HR to add users -->
+            <div class="text-center mt-3">
+                <p>Need an account? <a asp-action="Register" asp-controller="Account">Register here</a></p>
             </div>
         </div>
     </div>
-    
-    <form method="get" action="/Lecturer/MyClaims">
-        <input type="text" name="lecturerName" placeholder="Enter your name" class="form-control mb-2" />
-        <button type="submit" class="btn btn-warning">Track My Claims</button>
-    </form>
 </div>

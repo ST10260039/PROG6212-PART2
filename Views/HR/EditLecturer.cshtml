@@ -1,0 +1,32 @@
+﻿@model MonthlyClaimSystem.Models.Employee
+@{
+    ViewData["Title"] = "Edit Lecturer";
+}
+
+<div class="container mt-4">
+    <h2>Edit Lecturer</h2>
+
+    <form asp-action="EditLecturer" method="post">
+        <input type="hidden" asp-for="EmployeeID" />
+
+        <div class="mb-3">
+            <label asp-for="EmployeeName" class="form-label">Name</label>
+            <input asp-for="EmployeeName" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Department" class="form-label">Department</label>
+            <input asp-for="Department" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="ContactInfo" class="form-label">Contact Info</label>
+            <input asp-for="ContactInfo" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="ClaimRate" class="form-label">Claim Rate</label>
+            <input asp-for="ClaimRate" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a asp-action="ManageLecturers" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
